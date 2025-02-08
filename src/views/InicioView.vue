@@ -24,9 +24,9 @@
                                     </router-link>
                                 </li>
                                 <li class="nav-item list-group-item">
-                                    <router-link to="/transaccion" class="d-flex align-items-center p-3">
+                                    <router-link to="/analisis" class="d-flex align-items-center p-3">
                                         <i class="fas fa-exchange-alt"></i>
-                                        <span class="ms-3 d-none d-sm-flex">Transacciones</span>
+                                        <span class="ms-3 d-none d-sm-flex">Analisis</span>
                                     </router-link>
                                 </li>
                                 <li class="nav-item list-group-item">

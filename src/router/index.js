@@ -4,8 +4,8 @@ import RegistroView from '../views/RegistroView.vue'
 import LoginView from '../views/LoginView.vue'
 import InicioView from '@/views/InicioView.vue'
 import CompraView from '@/views/CompraView.vue'
-import TransaccionView from '@/views/TransaccionView.vue'
 import HistorialView from '@/views/HistorialView.vue'
+import AnalisisView from '@/views/AnalisisView.vue'
 
 const routes = [
   {
@@ -34,9 +34,9 @@ const routes = [
     component: CompraView
   },
   {
-    path: '/transaccion',
-    name: 'Transaccion',
-    component: TransaccionView
+    path: '/analisis',
+    name: 'Analisis',
+    component: AnalisisView
   },
   {
     path: '/historial',
