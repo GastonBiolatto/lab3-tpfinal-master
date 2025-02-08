@@ -108,7 +108,9 @@ export default {
             coins: [], 
             monedaSeleccionada: null, 
             cantidad: 0, 
-            textoBuscado: "" 
+            textoBuscado: "" ,
+            criptoAmounts:[],
+            valorFinal: {}
         }
     },
     computed: {
@@ -170,35 +172,83 @@ export default {
                 alert('Hubo un error al registrar la compra. Intenta nuevamente más tarde.');
             }
         },
-        async venderMoneda() {
-            if (this.cantidad <= 0 || !this.monedaSeleccionada) {
-                alert('Por favor, ingresa una cantidad válida y selecciona una moneda.');
-                return;
+        async obtenerDatos() {
+    try {
+        const respuesta = await apiClient.get('/transactions');
+        const data = respuesta.data;
+
+        this.monedasConValor = data.filter(item => item.user_id == this.currentUser.id);
+
+        this.valorFinal = {}; 
+        this.monedasConValor.forEach((transaction) => {
+            const cryptoCode = transaction.crypto_code;
+
+            if (!this.valorFinal[cryptoCode]) {
+                this.valorFinal[cryptoCode] = {
+                    crypto_code: cryptoCode,
+                    crypto_final: 0,
+                    cantArs: 0,
+                };
             }
 
-            const transactionData = {
-                user_id: this.currentUser.id,
-                action: "sale",
-                crypto_code: this.monedaSeleccionada.symbol.toLowerCase(),
-                crypto_amount: this.cantidad,
-                money: (this.cantidad * this.monedaSeleccionada.current_price).toFixed(2),
-                datetime: new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour12: false })
-            };
+            const cryptoAmount = parseFloat(transaction.crypto_amount);
+            const value = parseFloat(transaction.money);
 
-            try {
-                await apiClient.post('/transactions', transactionData); 
-                alert('Venta registrada con éxito!');
-                this.monedaSeleccionada = null;
-                this.cantidad = 0;
-                this.textoBuscado = '';
-                await this.cargarDatos();
-            } catch (error) {
-                console.error('Error al registrar la venta:', error);
-                alert('Hubo un error al registrar la venta. Intenta nuevamente más tarde.');
+            if (transaction.action === 'purchase') {
+                this.valorFinal[cryptoCode].crypto_final += cryptoAmount;
+            } else if (transaction.action === 'sale') {
+                this.valorFinal[cryptoCode].crypto_final -= cryptoAmount;
             }
-        }
+        });
+
+        console.log(this.valorFinal); 
+    } catch (e) {
+        console.error('Error al hacer la solicitud:', e);
+        this.monedasConValor = []; 
     }
 }
+,
+async venderMoneda() {
+    await this.obtenerDatos();
+
+    if (this.cantidad <= 0 || !this.monedaSeleccionada) {
+        alert('Por favor, ingresa una cantidad válida y selecciona una moneda.');
+        return;
+    }
+
+    const saldoActual = this.valorFinal[this.monedaSeleccionada.symbol.toLowerCase()]?.crypto_final || 0;
+
+    if (saldoActual < this.cantidad) {
+        alert('No tienes suficiente cantidad de criptomonedas para realizar la transacción.');
+        return;
+    }
+
+    const transactionData = {
+        user_id: this.currentUser.id,
+        action: "sale",
+        crypto_code: this.monedaSeleccionada.symbol.toLowerCase(),
+        crypto_amount: this.cantidad,
+        money: (this.cantidad * this.monedaSeleccionada.current_price).toFixed(2),
+        datetime: new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour12: false })
+    };
+
+    try {
+        await apiClient.post('/transactions', transactionData); 
+        alert('Venta registrada con éxito!');
+        this.monedaSeleccionada = null;
+        this.cantidad = 0;
+        this.textoBuscado = '';
+        await this.cargarDatos();
+    } catch (error) {
+        console.error('Error al registrar la venta:', error);
+        alert('Hubo un error al registrar la venta. Intenta nuevamente más tarde.');
+    }
+}
+
+
+    }
+}
+
 </script>
 
 <style scoped>
@@ -209,8 +259,8 @@ export default {
 }
 
 .table-container {
-    max-height: 75vh; /* Ajusta para que la tabla no ocupe toda la pantalla */
-    overflow-y: auto; /* Scroll vertical para la tabla */
+    max-height: 75vh; 
+    overflow-y: auto; 
 }
 
 .todo-alto {
